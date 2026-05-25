@@ -54,6 +54,7 @@ interface Props {
   selectedArtistId: number;
   setSelectedArtistId: (id: number) => void;
   onSubscribe: () => void;
+  onUnsubscribe: () => void;
   pollVotes: PollVotes;
   setPollVotes: (v: PollVotes) => void;
   userVote: string | null;
@@ -69,7 +70,7 @@ type PaymentStep = "idle" | "open" | "loading" | "viral";
 export default function FanView(props: Props) {
   const {
     appState, selectedArtistId, setSelectedArtistId,
-    onSubscribe, pollVotes, setPollVotes,
+    onSubscribe, onUnsubscribe, pollVotes, setPollVotes,
     userVote, setUserVote, isPlaying, setIsPlaying, onGoHome,
   } = props;
 
@@ -84,6 +85,11 @@ export default function FanView(props: Props) {
   const [commentInput, setCommentInput] = useState("");
   const [progressSec, setProgressSec] = useState(37);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* unsubscribe flow */
+  const [unsubscribeOpen, setUnsubscribeOpen]     = useState(false);
+  const [unsubReason, setUnsubReason]             = useState("Too expensive");
+  const [cancelBanner, setCancelBanner]           = useState(false);
 
   const artist = ARTISTS.find((a) => a.id === selectedArtistId)!;
   const p = artist.theme.primary;
@@ -130,6 +136,14 @@ export default function FanView(props: Props) {
     setCommentInput("");
   };
 
+  const handleUnsubscribeConfirm = () => {
+    setUnsubscribeOpen(false);
+    setCancelBanner(true);
+    setTimeout(() => setCancelBanner(false), 4000);
+    onUnsubscribe();
+    setScreen("hub");
+  };
+
   /* navigate back to hub when we switch artists */
   const selectArtist = (id: number) => {
     setSelectedArtistId(id);
@@ -139,6 +153,30 @@ export default function FanView(props: Props) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#121212]">
+      {/* ── Mobile top bar (hidden on desktop where sidebar exists) ── */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-black border-b border-white/10 shrink-0">
+        <button
+          onClick={onGoHome}
+          className="flex items-center gap-1.5 text-[#B3B3B3] hover:text-white text-sm font-medium transition-colors"
+        >
+          ← Exit Hub to Role Selection
+        </button>
+        <div className="flex items-center gap-1.5">
+          <SpotifyIcon className="w-5 h-5 text-[#1DB954]" />
+          <span className="text-white font-bold text-sm">Superfan Hub</span>
+        </div>
+      </div>
+
+      {/* ── Cancellation success banner ── */}
+      {cancelBanner && (
+        <div className="animate-slide-up bg-[#1a3a1a] border-b border-[#1DB954]/40 px-5 py-3 flex items-center gap-3 shrink-0">
+          <span className="text-[#1DB954] text-lg">✓</span>
+          <p className="text-white text-sm">
+            <strong>Subscription canceled.</strong> Access remains until the end of the billing period.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ── */}
         <Sidebar
@@ -176,6 +214,7 @@ export default function FanView(props: Props) {
               commentInput={commentInput}
               setCommentInput={setCommentInput}
               submitComment={submitComment}
+              onUnsubscribeClick={() => setUnsubscribeOpen(true)}
             />
           ) : null}
         </main>
@@ -208,6 +247,93 @@ export default function FanView(props: Props) {
           onClose={() => { setPaymentStep("idle"); setScreen("feed"); }}
         />
       )}
+
+      {/* ── Unsubscribe Modal ── */}
+      {unsubscribeOpen && (
+        <UnsubscribeModal
+          artist={artist}
+          reason={unsubReason}
+          setReason={setUnsubReason}
+          onConfirm={handleUnsubscribeConfirm}
+          onClose={() => setUnsubscribeOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════ UNSUBSCRIBE MODAL ═══════════════ */
+function UnsubscribeModal({
+  artist, reason, setReason, onConfirm, onClose,
+}: {
+  artist: (typeof ARTISTS)[0];
+  reason: string;
+  setReason: (r: string) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const p = artist.theme.primary;
+  const options = ["Too expensive", "Content is inactive", "Just testing the feature", "Switching to another artist", "Other"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#1C1C1C] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up border border-white/10 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h2 className="text-white font-bold text-lg leading-tight">We are sad to see you leave! 😢</h2>
+            <p className="text-[#B3B3B3] text-xs mt-1">
+              Please let <strong className="text-white">{artist.name}</strong> know why you decided to unsubscribe.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#B3B3B3] hover:text-white text-2xl leading-none ml-3 flex-shrink-0">×</button>
+        </div>
+
+        {/* Radio options */}
+        <div className="space-y-2 mb-6">
+          {options.map((opt) => (
+            <label
+              key={opt}
+              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all ${
+                reason === opt
+                  ? "border-[#B3B3B3]/60 bg-white/5"
+                  : "border-white/10 hover:border-white/25"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  reason === opt ? "border-white" : "border-white/30"
+                }`}
+              >
+                {reason === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+              </div>
+              <input
+                type="radio"
+                name="unsub-reason"
+                value={opt}
+                checked={reason === opt}
+                onChange={() => setReason(opt)}
+                className="sr-only"
+              />
+              <span className="text-white text-sm">{opt}</span>
+            </label>
+          ))}
+        </div>
+
+        {/* Confirm button */}
+        <button
+          onClick={onConfirm}
+          className="w-full py-3.5 rounded-full font-bold text-sm bg-black text-white border border-white/20 hover:bg-[#1a1a1a] transition-all hover:scale-[1.01] active:scale-[0.99]"
+        >
+          Confirm Cancellation
+        </button>
+        <button
+          onClick={onClose}
+          className="w-full py-3 mt-2 text-[#B3B3B3] hover:text-white text-sm transition-colors"
+        >
+          Keep my Superfan subscription
+        </button>
+      </div>
     </div>
   );
 }
@@ -646,6 +772,7 @@ function SuperfanFeed({
   pollVotes, userVote, handleVote, pct, totalPollVotes,
   isPlaying, setIsPlaying, progressSec,
   comments, commentInput, setCommentInput, submitComment,
+  onUnsubscribeClick,
 }: {
   artist: (typeof ARTISTS)[0];
   activeTab: number;
@@ -662,6 +789,7 @@ function SuperfanFeed({
   commentInput: string;
   setCommentInput: (v: string) => void;
   submitComment: () => void;
+  onUnsubscribeClick: () => void;
 }) {
   const p = artist.theme.primary;
   const tierColors = ["#1DB954", "#E040FB", "#FF5722"];
@@ -670,22 +798,31 @@ function SuperfanFeed({
     <div className="animate-fade-in" style={{ "--theme-primary": p } as React.CSSProperties}>
       {/* Artist header */}
       <div
-        className="relative h-48 flex items-end p-6"
-        style={{ background: `linear-gradient(180deg, ${p}55 0%, #121212 100%)` }}
+        className="relative flex items-end p-6 pt-10"
+        style={{ background: `linear-gradient(180deg, ${p}55 0%, #121212 100%)`, minHeight: "12rem" }}
       >
-        <div className="flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl"
-            style={{ background: `${p}44` }}
+        <div className="flex items-end justify-between w-full gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl flex-shrink-0"
+              style={{ background: `${p}44` }}
+            >
+              {artist.emoji}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">{artist.name}</h1>
+              <p className="text-sm" style={{ color: p }}>
+                ⭐ Superfan #18 · {artist.superfanCount.toLocaleString()} fans
+              </p>
+            </div>
+          </div>
+          {/* Unsubscribe entry point */}
+          <button
+            onClick={onUnsubscribeClick}
+            className="text-[#B3B3B3] hover:text-white text-xs border border-white/20 hover:border-white/50 rounded-full px-3 py-1.5 transition-all flex-shrink-0"
           >
-            {artist.emoji}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">{artist.name}</h1>
-            <p className="text-sm" style={{ color: p }}>
-              ⭐ Superfan #18 · {artist.superfanCount.toLocaleString()} fans
-            </p>
-          </div>
+            Unsubscribe from Superfan Hub
+          </button>
         </div>
       </div>
 
