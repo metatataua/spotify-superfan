@@ -18,8 +18,8 @@ export default function CreatorView({ theme, setTheme, onGoHome }: Props) {
     <div className="flex flex-col h-screen bg-[#121212] overflow-hidden">
       {/* ── Top Bar ── */}
       <header className="bg-black border-b border-white/10 px-6 py-3 flex items-center gap-4 shrink-0">
-        <button onClick={onGoHome} className="text-[#B3B3B3] hover:text-white text-sm transition-colors">
-          ← Back
+        <button onClick={onGoHome} className="text-[#B3B3B3] hover:text-white text-sm transition-colors whitespace-nowrap">
+          ← Exit Hub to Role Selection
         </button>
         <div className="flex items-center gap-2">
           <SpotifyIcon className="w-6 h-6 text-[#1DB954]" />
@@ -273,10 +273,12 @@ function SuperfanDashboard({ theme, setTheme }: { theme: Theme; setTheme: (t: Th
         {/* Viral Loops */}
         <div className="bg-[#181818] rounded-2xl p-5">
           <h2 className="text-white font-bold text-base mb-4">🔁 Viral Loops Conversion</h2>
-          <div className="space-y-4">
-            <StatMetric icon="📤" label="Social Sharing Rate" value="84%" sub="of your superfans published their personal badge to Stories" color={p} />
-            <StatMetric icon="👁️" label="Organic Reach Gained" value="+45,000" sub="unique listeners via fan story shares" color="#E040FB" />
-            <StatMetric icon="🔄" label="Referral Conversion" value="12.3%" sub="of story viewers clicked through to your profile" color="#FF5722" />
+          <div className="overflow-x-auto">
+            <div className="space-y-4 min-w-[220px]">
+              <StatMetric icon="📤" label="Social Sharing Rate" value="84%" sub="of your superfans published their personal badge to Stories" color={p} />
+              <StatMetric icon="👁️" label="Organic Reach Gained" value="+45,000" sub="unique listeners via fan story shares" color="#E040FB" />
+              <StatMetric icon="🔄" label="Referral Conversion" value="12.3%" sub="of story viewers clicked through to your profile" color="#FF5722" />
+            </div>
           </div>
         </div>
 
