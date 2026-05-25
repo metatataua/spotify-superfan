@@ -10,6 +10,7 @@ type TourStep = {
   title: string;
   description: string;
   cta: string;
+  context: string; /* shown as a highlighted chip on mobile so users know what's being pointed at */
 };
 
 const TOUR: TourStep[] = [
@@ -19,6 +20,7 @@ const TOUR: TourStep[] = [
     description:
       "This is your regular Spotify experience — music, podcasts, and playlists. But something exciting has just arrived for true fans.",
     cta: "Next →",
+    context: "Main Dashboard Grid",
   },
   {
     highlight: "sidebar",
@@ -26,6 +28,7 @@ const TOUR: TourStep[] = [
     description:
       "Your sidebar gives you quick access to everything you love on Spotify. We have added a brand-new destination right inside it.",
     cta: "Next →",
+    context: "Sidebar Navigation Menu",
   },
   {
     highlight: "superfan",
@@ -33,6 +36,7 @@ const TOUR: TourStep[] = [
     description:
       "A dedicated space where you connect directly with your favorite artists — exclusive content, polls, early tickets, and more.",
     cta: "Go to Superfan Hub →",
+    context: "Superfan Hub — New Nav Link",
   },
 ];
 
@@ -74,8 +78,8 @@ export default function Onboarding({ onComplete }: Props) {
 /* ─────────────── Welcome Modal ─────────────── */
 function WelcomeModal({ onNext }: { onNext: () => void }) {
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-20">
-      <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md w-full animate-pop-in border border-white/10 shadow-2xl mx-4">
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-full max-w-md px-4">
+      <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 w-full animate-pop-in border border-white/10 shadow-2xl">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-[#1DB954] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
             <SpotifyIcon className="w-9 h-9 text-black" />
@@ -152,6 +156,13 @@ function TooltipCard({
           ))}
         </div>
 
+        {/* Context indicator — always visible, essential on mobile where shell is hidden */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="text-[10px] text-[#B3B3B3] uppercase tracking-widest font-semibold">Context:</span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30">
+            [{step.context}]
+          </span>
+        </div>
         <h3 className="text-white font-bold text-base mb-2">{step.title}</h3>
         <p className="text-[#B3B3B3] text-sm leading-relaxed mb-5">{step.description}</p>
 
