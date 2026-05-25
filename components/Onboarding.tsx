@@ -3,17 +3,19 @@ import { useState } from "react";
 
 interface Props {
   onComplete: () => void;
+  isCreatorMode?: boolean;
 }
 
 type TourStep = {
-  highlight: "home" | "sidebar" | "superfan";
+  highlight: "home" | "sidebar" | "superfan" | "revenue" | "heatmap" | "antifraud" | "welcome";
   title: string;
   description: string;
   cta: string;
   context: string; /* shown as a highlighted chip on mobile so users know what's being pointed at */
+  targetElement: string; /* shown as the glowing "🎯 TARGET INTERFACE ELEMENT" banner */
 };
 
-const TOUR: TourStep[] = [
+const FAN_TOUR: TourStep[] = [
   {
     highlight: "home",
     title: "Your Spotify Home",
@@ -21,6 +23,7 @@ const TOUR: TourStep[] = [
       "This is your regular Spotify experience — music, podcasts, and playlists. But something exciting has just arrived for true fans.",
     cta: "Next →",
     context: "Main Dashboard Grid",
+    targetElement: "Spotify Home Dashboard Grid",
   },
   {
     highlight: "sidebar",
@@ -29,6 +32,7 @@ const TOUR: TourStep[] = [
       "Your sidebar gives you quick access to everything you love on Spotify. We have added a brand-new destination right inside it.",
     cta: "Next →",
     context: "Sidebar Navigation Menu",
+    targetElement: "Left Navigation Sidebar Menu",
   },
   {
     highlight: "superfan",
@@ -37,11 +41,53 @@ const TOUR: TourStep[] = [
       "A dedicated space where you connect directly with your favorite artists — exclusive content, polls, early tickets, and more.",
     cta: "Go to Superfan Hub →",
     context: "Superfan Hub — New Nav Link",
+    targetElement: "Superfan Hub Nav Link (Sidebar Bottom)",
   },
 ];
 
-export default function Onboarding({ onComplete }: Props) {
+const CREATOR_TOUR: TourStep[] = [
+  {
+    highlight: "welcome",
+    title: "Welcome to Your Admin Tool",
+    description:
+      "Spotify for Artists now includes a full Superfan Management dashboard. This is your control panel for building direct revenue from your most loyal listeners.",
+    cta: "Next →",
+    context: "Spotify for Artists — Admin Panel",
+    targetElement: "Superfan Management Tab (Top Navigation)",
+  },
+  {
+    highlight: "revenue",
+    title: "Net MRR Revenue Slider",
+    description:
+      "Drag the fan count slider to project your monthly recurring revenue in real time. Spotify takes a 20% platform fee — everything else is yours.",
+    cta: "Next →",
+    context: "Revenue Calculator Card",
+    targetElement: "Revenue Calculator & Net MRR Slider",
+  },
+  {
+    highlight: "heatmap",
+    title: "Premium Core Density Heatmap",
+    description:
+      "This heatmap shows Spotify Premium listener density by city. Use it to decide where to target your presale tickets and exclusive drops first.",
+    cta: "Next →",
+    context: "Heatmap Card (Analytics Section)",
+    targetElement: "Premium Density Heatmap (Analytics Panel)",
+  },
+  {
+    highlight: "antifraud",
+    title: "Anti-Fraud Vault",
+    description:
+      "All subscriptions are protected by Spotify's fraud detection engine. Real-time signals flag suspicious payments so your MRR stays clean.",
+    cta: "Enter Dashboard →",
+    context: "Anti-Fraud & Security Panel",
+    targetElement: "Anti-Fraud Vault (Commerce & Payouts Section)",
+  },
+];
+
+export default function Onboarding({ onComplete, isCreatorMode = false }: Props) {
   const [step, setStep] = useState<"welcome" | number>("welcome");
+
+  const TOUR = isCreatorMode ? CREATOR_TOUR : FAN_TOUR;
 
   const advance = () => {
     if (step === "welcome") { setStep(0); return; }
@@ -57,12 +103,12 @@ export default function Onboarding({ onComplete }: Props) {
       {/* ── Background Spotify shell ── */}
       <SpotifyShell highlight={currentTour?.highlight ?? null} />
 
-      {/* ── Dark overlay with cutout hints per step ── */}
-      <div className="absolute inset-0 bg-black/60" />
+      {/* ── Semi-transparent overlay so background shell stays visible ── */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
 
       {/* ── Content ── */}
       {step === "welcome" ? (
-        <WelcomeModal onNext={advance} />
+        <WelcomeModal onNext={advance} isCreatorMode={isCreatorMode} />
       ) : (
         <TooltipCard
           step={currentTour!}
@@ -76,26 +122,42 @@ export default function Onboarding({ onComplete }: Props) {
 }
 
 /* ─────────────── Welcome Modal ─────────────── */
-function WelcomeModal({ onNext }: { onNext: () => void }) {
+function WelcomeModal({ onNext, isCreatorMode }: { onNext: () => void; isCreatorMode: boolean }) {
+  const fanBullets = [
+    { icon: "🎵", text: "Exclusive tracks and raw behind-the-scenes content" },
+    { icon: "🗳️", text: "Vote on tour cities, setlists, and album artwork" },
+    { icon: "🎟️", text: "48-hour priority access to concert presale tickets" },
+  ];
+  const creatorBullets = [
+    { icon: "📊", text: "Real-time MRR calculator with fan projection slider" },
+    { icon: "🗺️", text: "Premium density heatmap — identify your highest-value markets" },
+    { icon: "🔒", text: "Anti-fraud vault with real-time suspicious payment flags" },
+  ];
+  const bullets = isCreatorMode ? creatorBullets : fanBullets;
+
   return (
     <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-full max-w-md px-4">
       <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 w-full animate-pop-in border border-white/10 shadow-2xl">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-[#1DB954] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
-            <SpotifyIcon className="w-9 h-9 text-black" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg ${isCreatorMode ? "bg-purple-600 shadow-purple-500/30" : "bg-[#1DB954] shadow-green-500/30"}`}>
+            {isCreatorMode
+              ? <span className="text-2xl">🎤</span>
+              : <SpotifyIcon className="w-9 h-9 text-black" />
+            }
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Meet Spotify Superfan!</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            {isCreatorMode ? "Superfan Admin Guide" : "Meet Spotify Superfan!"}
+          </h1>
           <p className="text-[#B3B3B3] text-sm leading-relaxed">
-            The next evolution in fan-artist connection. Experience music like never before.
+            {isCreatorMode
+              ? "A quick walkthrough of your Superfan Management tools. Learn where to find every revenue and analytics feature."
+              : "The next evolution in fan-artist connection. Experience music like never before."
+            }
           </p>
         </div>
 
         <div className="space-y-3 mb-8">
-          {[
-            { icon: "🎵", text: "Exclusive tracks and raw behind-the-scenes content" },
-            { icon: "🗳️", text: "Vote on tour cities, setlists, and album artwork" },
-            { icon: "🎟️", text: "48-hour priority access to concert presale tickets" },
-          ].map((b, i) => (
+          {bullets.map((b, i) => (
             <div key={i} className="flex items-center gap-3 bg-[#282828] rounded-xl p-3">
               <span className="text-xl">{b.icon}</span>
               <span className="text-sm text-white">{b.text}</span>
@@ -105,9 +167,9 @@ function WelcomeModal({ onNext }: { onNext: () => void }) {
 
         <button
           onClick={onNext}
-          className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-3.5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+          className={`w-full font-bold py-3.5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 ${isCreatorMode ? "bg-purple-600 hover:bg-purple-500 text-white" : "bg-[#1DB954] hover:bg-[#1ed760] text-black"}`}
         >
-          Start Tour →
+          {isCreatorMode ? "Start Admin Tour →" : "Start Tour →"}
         </button>
 
         <p className="text-center text-[#B3B3B3] text-xs mt-4">Takes less than 30 seconds</p>
@@ -156,7 +218,16 @@ function TooltipCard({
           ))}
         </div>
 
-        {/* Context indicator — always visible, essential on mobile where shell is hidden */}
+        {/* 🎯 TARGET INTERFACE ELEMENT banner — high-contrast, always visible */}
+        <div className="mb-3 rounded-xl px-3 py-2 border border-[#1DB954]/60 bg-[#1DB954]/10 flex items-center gap-2 animate-glow-pulse">
+          <span className="text-base leading-none">🎯</span>
+          <div>
+            <p className="text-[9px] text-[#1DB954] uppercase tracking-widest font-bold leading-none mb-0.5">Target Interface Element</p>
+            <p className="text-[#1ed760] text-[11px] font-bold leading-snug">{step.targetElement}</p>
+          </div>
+        </div>
+
+        {/* Context indicator chip */}
         <div className="flex items-center gap-1.5 mb-3">
           <span className="text-[10px] text-[#B3B3B3] uppercase tracking-widest font-semibold">Context:</span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30">
@@ -188,6 +259,10 @@ function SpotifyShell({ highlight }: { highlight: string | null }) {
     isHL(key)
       ? "ring-2 ring-[#1DB954] shadow-[0_0_32px_rgba(29,185,84,0.8)] bg-[#1a2a1a]"
       : "opacity-40";
+
+  /* Creator mode highlights — these show the creator shell instead */
+  const isCreatorHL = ["revenue", "heatmap", "antifraud", "welcome"].includes(highlight ?? "");
+  if (isCreatorHL) return <CreatorShell highlight={highlight!} />;
 
   return (
     <div className="absolute inset-0 flex overflow-hidden select-none pointer-events-none">
@@ -277,6 +352,90 @@ function SpotifyShell({ highlight }: { highlight: string | null }) {
               <div key={a} className="flex flex-col items-center gap-2 w-28">
                 <div className="w-24 h-24 bg-[#282828] rounded-full" />
                 <span className="text-white text-xs text-center font-medium">{a}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────── Creator Admin Shell (B2B tour background) ─────────────── */
+function CreatorShell({ highlight }: { highlight: string }) {
+  const hl = (key: string) => highlight === key;
+  const ring = (key: string) =>
+    hl(key)
+      ? "ring-2 ring-purple-500 shadow-[0_0_32px_rgba(168,85,247,0.7)] bg-[#1a0d2e]"
+      : "opacity-40";
+
+  return (
+    <div className="absolute inset-0 flex flex-col overflow-hidden select-none pointer-events-none bg-[#121212]">
+      {/* Top bar */}
+      <header className="bg-black border-b border-white/10 px-6 py-3 flex items-center gap-4 shrink-0">
+        <span className="text-[#B3B3B3] text-sm">← Exit Hub to Role Selection</span>
+        <div className="flex items-center gap-2">
+          <SpotifyIcon className="w-5 h-5 text-[#1DB954]" />
+          <span className="text-white font-bold text-sm">Spotify for Artists</span>
+        </div>
+      </header>
+
+      {/* Tab bar */}
+      <div className={`bg-[#181818] border-b border-white/10 px-6 flex gap-0 shrink-0 transition-all ${hl("welcome") ? "ring-2 ring-purple-500 shadow-[0_0_24px_rgba(168,85,247,0.6)]" : "opacity-60"}`}>
+        {["Music", "Podcasts", "Video Shows", "Superfan Management"].map((tab) => (
+          <div
+            key={tab}
+            className={`px-5 py-4 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px ${
+              tab === "Superfan Management" ? "border-[#1DB954] text-[#1DB954]" : "border-transparent text-[#B3B3B3]"
+            }`}
+          >
+            {tab}
+            {tab === "Superfan Management" && (
+              <span className="ml-2 bg-[#1DB954] text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">ACTIVE</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Dashboard panels */}
+      <div className="flex-1 p-4 grid grid-cols-2 gap-3 overflow-hidden">
+        {/* Revenue Calculator */}
+        <div className={`rounded-2xl p-4 flex flex-col gap-2 transition-all ${ring("revenue")} ${!hl("revenue") ? "bg-[#181818]" : "bg-[#181818]"}`}>
+          <p className="text-white font-bold text-xs">📊 Revenue Calculator</p>
+          <p className="text-[#B3B3B3] text-[10px]">Base tier: $4.99/mo per superfan</p>
+          <div className="h-2 bg-purple-500/40 rounded-full mt-1" />
+          <div className="space-y-1.5 mt-2">
+            <div className="flex justify-between"><span className="text-[#B3B3B3] text-[10px]">Total Gross</span><span className="text-white text-[10px] font-bold">$2,495.00</span></div>
+            <div className="flex justify-between"><span className="text-[#B3B3B3] text-[10px]">Platform Fee</span><span className="text-red-400 text-[10px] font-bold">−$499.00</span></div>
+            <div className="flex justify-between border-t border-white/10 pt-1.5"><span className="text-[#1DB954] text-[10px] font-bold">Net MRR</span><span className="text-[#1DB954] text-[10px] font-bold">$1,996.00</span></div>
+          </div>
+        </div>
+
+        {/* Heatmap */}
+        <div className={`rounded-2xl p-4 flex flex-col gap-2 transition-all ${ring("heatmap")} ${!hl("heatmap") ? "bg-[#181818]" : "bg-[#181818]"}`}>
+          <p className="text-white font-bold text-xs">🗺️ Premium Density Heatmap</p>
+          {["Paris 🇫🇷 45%", "New York 🇺🇸 40%", "Kyiv 🇺🇦 35%"].map((row) => (
+            <div key={row} className="flex flex-col gap-0.5">
+              <span className="text-[#B3B3B3] text-[9px]">{row}</span>
+              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-purple-400" style={{ width: row.includes("45") ? "45%" : row.includes("40") ? "40%" : "35%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Anti-fraud */}
+        <div className={`rounded-2xl p-4 col-span-2 transition-all ${ring("antifraud")} ${!hl("antifraud") ? "bg-[#181818]" : "bg-[#181818]"}`}>
+          <p className="text-white font-bold text-xs mb-2">🔒 Anti-Fraud Vault</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Clean Payments", value: "98.7%", color: "#1DB954" },
+              { label: "Flagged Today", value: "2", color: "#ef4444" },
+              { label: "Avg. Response", value: "1.2s", color: "#E040FB" },
+            ].map((s) => (
+              <div key={s.label} className="bg-[#282828] rounded-xl p-2 text-center">
+                <p className="font-bold text-sm" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[#B3B3B3] text-[9px]">{s.label}</p>
               </div>
             ))}
           </div>
