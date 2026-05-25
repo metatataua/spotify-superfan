@@ -74,8 +74,8 @@ export default function Onboarding({ onComplete }: Props) {
 /* ─────────────── Welcome Modal ─────────────── */
 function WelcomeModal({ onNext }: { onNext: () => void }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-4">
-      <div className="bg-[#181818] rounded-2xl p-8 max-w-md w-full animate-pop-in border border-white/10 shadow-2xl">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-20">
+      <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md w-full animate-pop-in border border-white/10 shadow-2xl mx-4">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-[#1DB954] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
             <SpotifyIcon className="w-9 h-9 text-black" />
@@ -118,21 +118,28 @@ function TooltipCard({
 }: {
   step: TourStep; index: number; total: number; onNext: () => void;
 }) {
-  const positions: Record<string, string> = {
-    home:     "left-[270px] top-[120px]",
-    sidebar:  "left-[270px] top-[50%] -translate-y-1/2",
-    superfan: "left-[270px] bottom-[80px]",
+  /* Desktop: positioned next to the highlighted sidebar element.
+     Mobile (< md): fixed, centered on screen like a modal sheet. */
+  const desktopPos: Record<string, string> = {
+    home:     "md:left-[270px] md:top-[100px]",
+    sidebar:  "md:left-[270px] md:top-1/2 md:-translate-y-1/2",
+    superfan: "md:left-[270px] md:bottom-[90px]",
   };
 
   return (
     <div
       key={index}
-      className={`absolute ${positions[step.highlight]} z-10 animate-slide-up`}
+      className={`
+        fixed bottom-0 left-0 right-0 z-20 animate-slide-up
+        md:absolute md:bottom-auto md:left-auto md:right-auto
+        ${desktopPos[step.highlight]}
+        p-4 md:p-0
+      `}
     >
-      {/* Arrow */}
-      <div className="absolute left-[-10px] top-6 w-0 h-0 border-y-8 border-y-transparent border-r-[10px] border-r-[#181818]" />
+      {/* Arrow — desktop only */}
+      <div className="hidden md:block absolute left-[-10px] top-6 w-0 h-0 border-y-8 border-y-transparent border-r-[10px] border-r-[#181818]" />
 
-      <div className="bg-[#181818] border border-[#1DB954]/40 rounded-2xl p-5 max-w-xs shadow-2xl shadow-black/60">
+      <div className="bg-[#181818] border border-[#1DB954]/40 rounded-2xl p-5 w-full md:max-w-xs shadow-2xl shadow-black/60">
         {/* Progress dots */}
         <div className="flex gap-1.5 mb-4">
           {Array.from({ length: total }).map((_, i) => (
