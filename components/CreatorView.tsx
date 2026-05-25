@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { Theme } from "@/lib/types";
 import { THEMES } from "@/lib/types";
+import Onboarding from "@/components/Onboarding";
 
 interface Props {
   theme: Theme;
@@ -13,9 +14,16 @@ type WorkspaceTab = "Music" | "Podcasts" | "Video Shows" | "Superfan Management"
 
 export default function CreatorView({ theme, setTheme, onGoHome }: Props) {
   const [workspace, setWorkspace] = useState<WorkspaceTab>("Superfan Management");
+  /* Auto-trigger the B2B guide tour on first entry; user can re-trigger via header button */
+  const [showTour, setShowTour] = useState(true);
 
   return (
     <div className="flex flex-col h-screen bg-[#121212] overflow-hidden">
+      {/* ── B2B Creator Guide Tour (auto-launches on first entry) ── */}
+      {showTour && (
+        <Onboarding isCreatorMode={true} onComplete={() => setShowTour(false)} />
+      )}
+
       {/* ── Top Bar ── */}
       <header className="bg-black border-b border-white/10 px-6 py-3 flex items-center gap-4 shrink-0">
         <button onClick={onGoHome} className="text-[#B3B3B3] hover:text-white text-sm transition-colors whitespace-nowrap">
@@ -26,6 +34,13 @@ export default function CreatorView({ theme, setTheme, onGoHome }: Props) {
           <span className="text-white font-bold">Spotify for Artists</span>
         </div>
         <div className="ml-auto flex items-center gap-3">
+          {/* ❓ Run Guide Tour — manually re-trigger B2B onboarding */}
+          <button
+            onClick={() => setShowTour(true)}
+            className="text-[#B3B3B3] hover:text-white text-xs transition-colors whitespace-nowrap hidden sm:block"
+          >
+            ❓ Run Guide Tour
+          </button>
           <div className="w-8 h-8 bg-[#282828] rounded-full flex items-center justify-center text-sm">🎤</div>
           <span className="text-white text-sm font-semibold hidden sm:block">My Artist Profile</span>
         </div>
